@@ -12,7 +12,6 @@ K_N = 20
 N_PROTO = 500
 SEED = 43
 
-
 def predict_batched(clf, X, ker, k, batch=200):
     """Предсказание пачками, чтобы не раздувать память тензором n×m×d."""
     return np.concatenate([clf.predict(X[i:i + batch], ker, k)
