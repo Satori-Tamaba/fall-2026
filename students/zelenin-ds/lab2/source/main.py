@@ -32,7 +32,7 @@ def ref_error(Xa, ya, Xb, yb, k):
 
 
 if __name__ == "__main__":
-    # ---------- данные ----------
+
     data = load_data("data/apple_quality.csv")
     data = prepare_data(data, drop_cols=DROP_COLS, target=TARGET)
     x = data.drop(columns=TARGET).to_numpy(dtype=float)
@@ -45,10 +45,7 @@ if __name__ == "__main__":
     X_tr, X_te, y_tr, y_te = x[tr], x[te], y[tr], y[te]
     print("train:", X_tr.shape, "test:", X_te.shape)
 
-    # =====================================================
-    # 1-2. Подбор k по LOO, график эмпирического риска
-    # LOO считаем только на обучающей части, чтобы тест остался чистым
-    # =====================================================
+
     k_best, e_min, emp_risk = loo(X_tr, y_tr, k_n=K_N)
     ks = np.arange(1, len(emp_risk) + 1)
     print(f"Лучший k по LOO: {k_best}, ошибок {e_min}, риск {emp_risk[k_best - 1]:.4f}")
@@ -62,9 +59,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid(alpha=0.3)
 
-    # =====================================================
-    # 3. Сравнение с эталонной реализацией (sklearn)
-    # =====================================================
+
     ker = GaussianKernel()
     my_clf = ParzenClassifier()
     my_clf.fit(X_tr, y_tr)
