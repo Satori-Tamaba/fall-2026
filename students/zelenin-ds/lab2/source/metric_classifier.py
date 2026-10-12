@@ -58,20 +58,20 @@ class PrototypeSelection:
 
     def _build_neighbors(self, X, y):
         dists = self.calculate_metrics(X, X)
-        np.fill_diagonal(dists, np.inf)          # сам себе не сосед
-        self.order = dists.argsort(axis=1)[:, :-1]   # последний столбец это сам объект (inf)
+        np.fill_diagonal(dists, np.inf)
+        self.order = dists.argsort(axis=1)[:, :-1]
         labels = y[self.order]
         self.wrong = y[:, None] != labels
         print("order:", self.order.shape, "wrong:", self.wrong.shape)
 
     def _profile(self):
-        return self.wrong.mean(axis=0)           # шаг 6, вектор длины L-1
+        return self.wrong.mean(axis=0)
 
     def _error(self, wrong=None, k=None):
         wrong = self.wrong if wrong is None else wrong
         k = self.k if k is None else k
-        bad = wrong[:, :k].sum(axis=1) > k / 2   # большинство соседей чужое
-        return bad.mean(), bad                   # шаг 7: число и маска по объектам
+        bad = wrong[:, :k].sum(axis=1) > k / 2
+        return bad.mean(), bad
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         self.X, self.y = X, y
@@ -102,15 +102,15 @@ class PrototypeSelection:
         for step in range(max_steps or n - 2):
             best_i, best_new = None, None
             for i in np.where(alive)[0]:
-                alive[i] = False  # пробуем убрать i
+                alive[i] = False
                 err = self.error_with_prototype(alive)
-                alive[i] = True  # возвращаем
+                alive[i] = True
                 if best_new is None or err < best_new:
                     best_i, best_new = i, err
 
-            if best_new > best_err + 0.001:  # ошибка заметно выросла -> стоп
+            if best_new > best_err + 0.001:
                 break
-            alive[best_i] = False  # удаляем лучшего
+            alive[best_i] = False
             best_err = best_new
             history.append((alive.sum(), best_err))
             print(step, alive.sum(), best_err)
