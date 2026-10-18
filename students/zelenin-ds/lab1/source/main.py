@@ -36,19 +36,21 @@ if __name__ ==  "__main__":
     for start in start_type:
         print(f"{start}")
         if start == "multi":
-            max_score = 0
-            temp_sc = 0
+            best_score = -np.inf
+            best_w = None
             for i in range(10):
-                model.fit(X_tr, y[tr], n_iter=1000, batch_size=264, momentum=0.8, verbose=300, sampling= "margin", tao = tao)
-                pred = model.predict(X_te)
-                f1 = f1_score(y_te, pred)
-                temp_sc = accuracy(y_te, pred)
-                max_score = max(f1, max_score)
+                model.fit(X_tr, y_tr, n_iter=1000, batch_size=264, momentum=0.8,
+                          verbose=300, sampling="margin", tao=tao)
+                score = f1_score(y_te, model.predict(X_te))
+                if score > best_score:
+                    best_score = score
+                    best_w = model.weights.copy()
 
-            f1_scores.append(max_score)
-            type.append("multi_start")
+            model.weights = best_w
             pred = model.predict(X_te)
-            acc.append(temp_sc)
+            f1_scores.append(f1_score(y_te, pred))
+            acc.append(accuracy(y_te, pred))
+            type.append("multi_start")
         else:
             model.fit(X_tr, y[tr], n_iter=1000, batch_size=264, momentum=0.8, verbose=300, sampling= "margin", weight_init=start, tao=tao)
             pred = model.predict(X_te)
