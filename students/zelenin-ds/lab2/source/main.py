@@ -8,8 +8,8 @@ from metric_classifier import ParzenClassifier, PrototypeSelection
 from utils import loo
 
 
-K_N = 20
-N_PROTO = 500
+K_N = 40
+N_PROTO = 700
 SEED = 43
 
 def predict_batched(clf, X, ker, k, batch=200):
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     rng = np.random.default_rng(SEED)
     idx = rng.permutation(len(x))
-    split = int(0.8 * len(x))
+    split = int(0.9 * len(x))
     tr, te = idx[:split], idx[split:]
     X_tr, X_te, y_tr, y_te = x[tr], x[te], y[tr], y[te]
     print("train:", X_tr.shape, "test:", X_te.shape)
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     plt.tight_layout()
 
 
-    ks_cmp = [k for k in [1, 3, 5, 7, 9, 11] if k <= n_proto]
+    ks_cmp = [k for k in [ 1,3,5,7,9, 11, k_best,101] if k <= n_proto]
     err_all = [ref_error(Xs, ys, X_te, y_te, k) for k in ks_cmp]
     err_pro = [ref_error(Xs[alive], ys[alive], X_te, y_te, k) for k in ks_cmp]
 
