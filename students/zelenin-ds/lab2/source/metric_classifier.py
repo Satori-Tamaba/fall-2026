@@ -43,10 +43,10 @@ class PrototypeSelection:
         self.k = k
         self.X = None
         self.y = None
-        self.order = None            # индексы соседей по возрастанию расстояния
-        self.wrong = None            # True, если сосед чужого класса
-        self.compact_profile = None  # шаг 6
-        self.error = None            # шаг 7
+        self.order = None
+        self.wrong = None
+        self.compact_profile = None
+        self.error = None
 
     def calculate_metrics(self, x, b, p=2) -> np.ndarray:
         if p == 2:
@@ -83,15 +83,11 @@ class PrototypeSelection:
         return self
 
     def error_with_prototype(self, alive):
-        errors = 0
-        for i in range(len(self.y)):
-            row = self.order[i]  # соседи объекта i по возрастанию расстояния
-            row = row[alive[row]]  # оставляем только живых
-            nb = row[:self.k]  # первые k живых соседей
-            wrong_count = np.sum(self.y[nb] != self.y[i])
-            if wrong_count > self.k / 2:  # большинство чужое -> ошибка
-                errors += 1
-        return errors / len(self.y)
+        A = alive[self.order]
+        rank = np.cumsum(A, axis=1)
+        use = A & (rank <= self.k)
+        wrong_cnt = (use & self.wrong).sum(axis=1)
+        return np.mean(wrong_cnt > self.k / 2)
 
     def select(self, max_steps=None):
         n = len(self.y)
