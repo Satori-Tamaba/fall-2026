@@ -6,21 +6,12 @@ from dataset import TARGET
 from lin_clf import LinearClassifier
 
 
-def visualise_marg(X, y,mode = "corr") -> None:
-    model = LinearClassifier()
-    if mode == "corr":
-        model.corr_init(X, y)
-    elif mode == "train":
-        model.fit(X,y,n_iter=1000, batch_size=264, momentum=0.8, verbose=300, sampling= "margin", tao = 0.8)
-    elif mode == "random":
-        model.random_init(X)
-    else:
-        raise ValueError("corr или train или random")
+def visualise_marg(model: LinearClassifier, X, y, mode: str) -> None:
     marg = model.margin(X, y)
     plt.scatter(np.arange(len(marg)), np.sort(marg))
     plt.xlabel("Объект")
     plt.ylabel("Отступ")
-    plt.title(f"Отступ объектов с {mode}", )
+    plt.title(f"Отступ объектов, режим: {mode}")
 
     plt.show()
 
