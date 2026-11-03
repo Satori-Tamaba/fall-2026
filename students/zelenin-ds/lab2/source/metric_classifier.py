@@ -60,6 +60,7 @@ class PrototypeSelection:
         dists = self.calculate_metrics(X, X)
         np.fill_diagonal(dists, np.inf)
         self.order = dists.argsort(axis=1)[:, :-1]
+        self.d_sorted = np.sort(dists, axis=1)[:, :-1]
         labels = y[self.order]
         self.wrong = y[:, None] != labels
         print("order:", self.order.shape, "wrong:", self.wrong.shape)
@@ -67,47 +68,69 @@ class PrototypeSelection:
     def _profile(self):
         return self.wrong.mean(axis=0)
 
-    def _error(self, wrong=None, k=None):
-        wrong = self.wrong if wrong is None else wrong
-        k = self.k if k is None else k
-        bad = wrong[:, :k].sum(axis=1) > k / 2
-        return bad.mean(), bad
-
     def fit(self, X: np.ndarray, y: np.ndarray):
         self.X, self.y = X, y
         self._build_neighbors(X, y)
         self.compact_profile = self._profile()
-        self.error, self.bad = self._error()
+        self.error = self.error_with_prototype(np.ones(len(y), dtype=bool))
         print("профиль[0] (должен ≈ LOO 1-NN):", self.compact_profile[0])
-        print(f"ошибка при k={self.k}:", self.error)
+        print(f"CCV-критерий при k={self.k}:", self.error)
         return self
 
     def error_with_prototype(self, alive):
-        A = alive[self.order]
+        return self._contributions(alive).mean()
+
+    def _contributions(self, alive, rows=None):
+        order = self.order if rows is None else self.order[rows]
+        wrong = self.wrong if rows is None else self.wrong[rows]
+        d_all = self.d_sorted if rows is None else self.d_sorted[rows]
+        A = alive[order]
         rank = np.cumsum(A, axis=1)
         use = A & (rank <= self.k)
-        wrong_cnt = (use & self.wrong).sum(axis=1)
-        return np.mean(wrong_cnt > self.k / 2)
+        d = np.where(use, d_all, 0.0)
+        h = np.maximum(d.max(axis=1), 1e-12)
+        w = np.where(use, np.exp(-2 * (d / h[:, None]) ** 2), 0.0)
+        pi = w / np.maximum(w.sum(axis=1), 1e-12)[:, None]
+        return (pi * (use & wrong)).sum(axis=1)
 
     def select(self, max_steps=None):
         n = len(self.y)
         alive = np.ones(n, dtype=bool)
         history = []
-        best_err = self.error_with_prototype(alive)
+        c = self._contributions(alive)
+        base_sum = c.sum()
+        best_err = base_sum / n
 
         for step in range(max_steps or n - 2):
+            A = alive[self.order]
+            rank = np.cumsum(A, axis=1)
+            use = A & (rank <= self.k)
+            affected = [np.zeros(0, dtype=int) for _ in range(n)]
+            for p in range(min(n - 1, self.k + step)):
+                rows = np.nonzero(use[:, p])[0]
+                cols = self.order[rows, p]
+                for i, u in zip(cols, rows):
+                    old = affected[i]
+                    affected[i] = np.concatenate([old, [u]]) if len(old) else np.array([u])
+
             best_i, best_new = None, None
             for i in np.where(alive)[0]:
+                rows = affected[i]
+                if len(rows) == 0:
+                    continue
                 alive[i] = False
-                err = self.error_with_prototype(alive)
+                c_new = self._contributions(alive, rows)
                 alive[i] = True
+                err = (base_sum - c[rows].sum() + c_new.sum()) / n
                 if best_new is None or err < best_new:
                     best_i, best_new = i, err
 
-            if best_new > best_err + 0.001:
+            if best_new is None or best_new > best_err:
                 break
             alive[best_i] = False
-            best_err = best_new
+            c = self._contributions(alive)
+            base_sum = c.sum()
+            best_err = base_sum / n
             history.append((alive.sum(), best_err))
             print(step, alive.sum(), best_err)
 

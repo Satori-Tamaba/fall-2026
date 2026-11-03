@@ -57,6 +57,7 @@ if __name__ == "__main__":
     plt.ylabel("Частота ошибок")
     plt.legend()
     plt.grid(alpha=0.3)
+    plt.savefig("pics/k_dep_Parzen.png")
 
 
     ker = GaussianKernel()
@@ -103,6 +104,7 @@ if __name__ == "__main__":
     ax[1].set_title("Ход отбора")
     ax[1].grid(alpha=0.3)
     plt.tight_layout()
+    plt.savefig("pics/pca.png")
 
 
     ks_cmp = [k for k in [ 1,3,5,7,9, 11, k_best,101] if k <= n_proto]
@@ -122,5 +124,6 @@ if __name__ == "__main__":
     plt.title("KNN с отбором эталонов и без")
     plt.legend()
     plt.grid(alpha=0.3)
+    plt.savefig("pics/etalon.png")
 
     plt.show()
